@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GreenBios Hydro Systems</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f7f6;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #header {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 10px 0;
+            background-color: #f4f7f6;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #333;
+            margin-bottom: 10px;
+            text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo {
+            width: 80px;
+            height: auto;
+            margin-bottom: 10px;
+        }
+
+        #content {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            margin-top: 10px;
+            flex-grow: 1;
+            margin-bottom: 20px;
+        }
+
+        #video {
+            width: 100%;
+            max-width: 400px; /* Reduced width to create a more square-like appearance */
+            max-height: 400px; /* Make the height similar to the width */
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border: none;
+            object-fit: cover; /* Maintain aspect ratio while fitting the container */
+        }
+
+        #status {
+            background-color: #ffffff;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            text-align: left;
+            margin-left: 20px;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        #status h2 {
+            margin: 10px 0;
+            font-size: 1.2rem;
+            color: #333;
+        }
+
+        #label, #relayStatus {
+            color: #4CAF50;
+            font-weight: 700;
+        }
+
+        #loading {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #f4f7f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            display: none;
+        }
+
+        .spinner {
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        #startButton {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-top: 10px;
+        }
+
+        #startButton:hover {
+            background-color: #45a049;
+        }
+
+        @media (max-width: 768px) {
+            #video {
+                max-width: 300px;
+                max-height: 300px; /* Ensure it stays square on smaller devices */
+            }
+        }
+    
+        @media (max-width: 480px) {
+            #video {
+                max-width: 250px;
+                max-height: 250px; /* Adjust for very small screens */
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Loading screen -->
+    <div id="loading">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Logo and Title -->
+    <div id="header">
+        <img src="{{ url_for('static', filename='bios.PNG') }}" alt="Logo" class="logo">
+        <h1>GreenBios Hydro Systems</h1>
+    </div>
+
+    <!-- Start Button -->
+    <button id="startButton">Start</button>
+
+    <div id="content" style="display: none;">
+        <img id="video" src="{{ url_for('video_feed') }}" alt="Webcam Feed">
+        <div id="status">
+            <h2>Detect: <span id="label">Loading...</span></h2>
+            <h2>Nutrient Pump: <span id="relayStatus">Loading...</span></h2>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const startButton = document.getElementById('startButton');
+            const loadingScreen = document.getElementById('loading');
+            const content = document.getElementById('content');
+            const video = document.getElementById('video');
+            const status = document.getElementById('status');
+
+            // Function to start the webcam feed
+            function startWebcam() {
+                // Hide the start button
+                startButton.style.display = 'none';
+
+                // Show the loading animation
+                loadingScreen.style.display = 'flex';
+
+                // Simulate loading delay (e.g., for fetching webcam feed)
+                setTimeout(() => {
+                    // Hide the loading animation
+                    loadingScreen.style.display = 'none';
+
+                    // Show the webcam feed and status
+                    content.style.display = 'flex';
+                    video.style.display = 'block';
+                    status.style.display = 'block';
+
+                    // Fetch the status immediately
+                    fetchStatus();
+
+                    // Update status every 1 second
+                    setInterval(fetchStatus, 1000);
+                }, 2000); // Simulated 2-second loading time
+            }
+
+            // Fetch status from the server
+            function fetchStatus() {
+                fetch('/status')
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('label').textContent = data.label;
+                        document.getElementById('relayStatus').textContent = data.relay_status;
+                    })
+                    .catch(error => console.error('Error fetching status:', error));
+            }
+
+            // Start the webcam when the button is clicked
+            startButton.addEventListener('click', startWebcam);
+        });
+    </script>
+</body>
+</html>
